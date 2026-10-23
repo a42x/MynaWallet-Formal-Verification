@@ -12,7 +12,7 @@ permissions:
 jobs:
   reproducible-verification:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,6 +49,9 @@ jobs:
 
       - name: Certora local compilation and CVL syntax
         run: ./scripts/verify certora-compile
+
+      - name: Kontrol EVM semantics proof
+        run: ./scripts/verify kontrol
 
       - name: Pinned target cross-chain E2E suite
         run: ./scripts/verify target-test

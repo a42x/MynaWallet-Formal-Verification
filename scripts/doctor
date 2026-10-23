@@ -63,8 +63,12 @@ fi
 
 if command -v kontrol >/dev/null 2>&1; then
   ok "kontrol: $(kontrol --version 2>/dev/null | head -1)"
+elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  ok "kontrol Docker fallback: $(./scripts/kontrol-run version 2>/dev/null | head -1)"
+elif command -v docker >/dev/null 2>&1; then
+  note "Docker is installed but not running; Kontrol stage will SKIP"
 else
-  note "kontrol missing; Kontrol stage will SKIP. Install pinned v1.0.255 with kup."
+  note "Kontrol and Docker are missing; Kontrol stage will SKIP"
 fi
 
 if [[ -n "${CERTORAKEY:-}" ]]; then

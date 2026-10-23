@@ -15,6 +15,7 @@
     "quint": "0.33.0",
     "halmos": "0.3.3",
     "certoraCli": "8.20.2",
-    "kontrol": "1.0.255"
+    "kontrol": "1.0.255",
+    "kontrolImage": "runtimeverificationinc/kontrol@sha256:858f004144d61b005997f56bb8b7cd15673850286c96e0e5ec0502d9c9a9e204"
   }
 }

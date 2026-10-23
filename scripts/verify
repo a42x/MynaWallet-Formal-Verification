@@ -40,7 +40,13 @@ skips=0
   echo "quint=$(node_modules/.bin/quint --version 2>/dev/null | head -1)"
   echo "halmos=$(.venv/bin/halmos --version 2>/dev/null | head -1)"
   echo "certora_cli=8.20.2"
-  if command -v kontrol >/dev/null 2>&1; then echo "kontrol=$(kontrol --version 2>/dev/null | head -1)"; else echo "kontrol=MISSING"; fi
+  if command -v kontrol >/dev/null 2>&1; then
+    echo "kontrol=$(kontrol --version 2>/dev/null | head -1)"
+  elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo "kontrol=$(./scripts/kontrol-run version 2>/dev/null | head -1) (Docker)"
+  else
+    echo "kontrol=MISSING"
+  fi
   echo
 } > "$manifest"
 
@@ -114,11 +120,11 @@ run_certora() {
 }
 
 run_kontrol() {
-  if command -v kontrol >/dev/null 2>&1; then
-    run_stage kontrol-build bash -lc 'cd verification/solidity && kontrol build'
-    run_stage kontrol-hash-canonical bash -lc 'cd verification/solidity && kontrol prove --match-test RecoveryHashProperties.test_hashMatchesCanonicalEncoding'
+  if command -v kontrol >/dev/null 2>&1 || { command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; }; then
+    run_stage kontrol-build ./scripts/kontrol-run build -O0
+    run_stage kontrol-hash-canonical ./scripts/kontrol-run prove --match-test RecoveryHashProperties.test_hashMatchesCanonicalEncoding
   else
-    skip_stage kontrol "Kontrol v1.0.255 is not installed"
+    skip_stage kontrol "neither Kontrol v1.0.255 nor a running Docker daemon is available"
   fi
 }
 

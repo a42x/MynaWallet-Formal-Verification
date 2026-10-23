@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+IMAGE="runtimeverificationinc/kontrol@sha256:858f004144d61b005997f56bb8b7cd15673850286c96e0e5ec0502d9c9a9e204"
+
+if command -v kontrol >/dev/null 2>&1; then
+  exec kontrol "$@"
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Kontrol is unavailable: install Kontrol locally or install Docker." >&2
+  exit 127
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Kontrol Docker fallback is unavailable: Docker daemon is not running." >&2
+  exit 1
+fi
+
+mkdir -p "$ROOT/.tooling/kontrol-home"
+
+# Kontrol's Haskell target kompiles its LLVM helper and Haskell definition in
+# parallel. Running those sequentially is semantically equivalent and prevents
+# OOM failures on 8 GiB Docker/GitHub runners.
+exec docker run --rm \
+  --platform linux/amd64 \
+  --user "$(id -u):$(id -g)" \
+  --group-add 1010 \
+  --env HOME=/tmp/home \
+  --env K_OPTS=-Xmx5g \
+  --env KPROFILE_TELEMETRY_DISABLED=true \
+  --env PYTHONUSERBASE=/home/user/.local \
+  --volume "$ROOT:/workspace" \
+  --volume "$ROOT/.tooling/kontrol-home:/tmp/home" \
+  --workdir /workspace/verification/solidity \
+  "$IMAGE" \
+  bash -c '
+    mkdir -p "$HOME/.cache"
+    for cache in /home/user/.cache/kdist-*; do
+      ln -sfn "$cache" "$HOME/.cache/$(basename "$cache")"
+    done
+
+    if [[ "${1:-}" == "build" ]]; then
+      python3 - <<'"'"'PY'"'"'
+from pathlib import Path
+import inspect
+import shutil
+import kevm_pyk.kompile as module
+
+source = Path(inspect.getfile(module)).parent
+package = Path("/tmp/kevm_pyk")
+shutil.copytree(source, package)
+path = package / "kompile.py"
+text = path.read_text()
+parallel = """            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                futures = [
+                    executor.submit(_kompile_llvm),
+                    executor.submit(_kompile_haskell),
+                ]
+                [future.result() for future in futures]
+"""
+sequential = """            _kompile_llvm()
+            _kompile_haskell()
+"""
+if text.count(parallel) != 1:
+    raise SystemExit(f"unexpected Kontrol kompile implementation: matches={text.count(parallel)}")
+path.write_text(text.replace(parallel, sequential))
+PY
+      export PYTHONPATH="/tmp${PYTHONPATH:+:$PYTHONPATH}"
+    fi
+    exec kontrol "$@"
+  ' bash "$@"

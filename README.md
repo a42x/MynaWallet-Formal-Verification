@@ -39,6 +39,15 @@
 ./scripts/verify full
 ```
 
+Kontrolはローカルインストールがあればそれを使用し、なければdigest固定の公式Dockerイメージを使用します。
+
+```bash
+./scripts/install-kontrol   # pinned Docker imageを事前取得
+./scripts/verify kontrol
+```
+
+Apple Siliconでは公式amd64イメージをDockerのエミュレーションで実行します。メモリ制約のあるrunner向けに、LLVM helperとHaskell definitionのkompileを順次実行します。
+
 すべての実行は `results/<UTC timestamp>-<git sha>/` に次を保存します。
 
 - 対象source commit
