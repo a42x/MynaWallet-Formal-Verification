@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="v1.0.255"
+
+if ! command -v kup >/dev/null 2>&1; then
+  cat >&2 <<'EOF'
+kup is required to install the pinned Kontrol release.
+Install kup from the official K Framework installer, review it first, then rerun:
+  https://kframework.org/install
+EOF
+  exit 1
+fi
+
+kup install kontrol --version "$VERSION"
+echo "installed Kontrol $VERSION"

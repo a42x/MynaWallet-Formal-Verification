@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+fail=0
+warn=0
+
+ok()   { printf 'OK   %s\n' "$*"; }
+bad()  { printf 'FAIL %s\n' "$*"; fail=1; }
+note() { printf 'WARN %s\n' "$*"; warn=1; }
+
+need() {
+  local cmd="$1"
+  if command -v "$cmd" >/dev/null 2>&1; then ok "$cmd: $(command -v "$cmd")"; else bad "$cmd is missing"; fi
+}
+
+need git
+need node
+need npm
+need corepack
+need python3
+need uv
+need forge
+
+expected_commit="$(python3 -c 'import json; print(json.load(open("toolchains.lock.json"))["target"]["commit"])')"
+actual_commit="$(git -C vendor/mynawallet-sc rev-parse HEAD 2>/dev/null || true)"
+if [[ "$actual_commit" == "$expected_commit" ]]; then
+  ok "target commit: $actual_commit"
+else
+  bad "target commit mismatch: expected $expected_commit, got ${actual_commit:-missing}"
+fi
+
+if [[ -f package-lock.json && -d node_modules ]]; then
+  ok "Quint dependencies installed"
+else
+  bad "run ./scripts/bootstrap (package-lock.json/node_modules missing)"
+fi
+
+if [[ -f uv.lock && -x .venv/bin/python ]]; then
+  ok "Python verification environment installed"
+else
+  bad "run ./scripts/bootstrap (uv.lock/.venv missing)"
+fi
+
+if [[ -x .tooling/bin/solc-0.8.26 ]]; then
+  solc_version="$(.tooling/bin/solc-0.8.26 --version | tail -1)"
+  if [[ "$solc_version" == *"0.8.26"* ]]; then ok "solc: $solc_version"; else bad "wrong solc: $solc_version"; fi
+else
+  bad ".tooling/bin/solc-0.8.26 missing"
+fi
+
+if [[ -x node_modules/.bin/quint ]]; then
+  ok "quint: $(node_modules/.bin/quint --version 2>/dev/null | head -1)"
+fi
+if [[ -x .venv/bin/halmos ]]; then
+  ok "halmos: $(.venv/bin/halmos --version 2>/dev/null | head -1)"
+fi
+if [[ -x .venv/bin/certoraRun ]]; then
+  ok "certoraRun installed"
+fi
+
+if command -v kontrol >/dev/null 2>&1; then
+  ok "kontrol: $(kontrol --version 2>/dev/null | head -1)"
+else
+  note "kontrol missing; Kontrol stage will SKIP. Install pinned v1.0.255 with kup."
+fi
+
+if [[ -n "${CERTORAKEY:-}" ]]; then
+  ok "CERTORAKEY is set (value hidden)"
+else
+  note "CERTORAKEY unset; remote Certora stage will SKIP"
+fi
+
+if (( fail )); then
+  echo "doctor: NOT READY"
+  exit 1
+fi
+
+if (( warn )); then
+  echo "doctor: READY WITH OPTIONAL STAGES UNAVAILABLE"
+else
+  echo "doctor: READY"
+fi

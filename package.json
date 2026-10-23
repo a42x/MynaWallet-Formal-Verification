@@ -1,0 +1,20 @@
+{
+  "name": "mynawallet-formal-verification",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reproducible formal verification harness for MynaWallet cross-chain recovery",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "model:typecheck": "quint typecheck models/quint/CrossChainRecovery.qnt",
+    "model:test": "quint test --main=CrossChainRecoveryTests models/quint/CrossChainRecovery.qnt",
+    "model:verify": "quint verify --backend=tlc --main=CrossChainRecovery --invariant=safety models/quint/CrossChainRecovery.qnt",
+    "model:simulate": "quint run --main=CrossChainRecovery --invariant=safety --max-samples=10000 models/quint/CrossChainRecovery.qnt"
+  },
+  "devDependencies": {
+    "@informalsystems/quint": "0.33.0"
+  },
+  "engines": {
+    "node": "22.22.0"
+  },
+  "packageManager": "npm@10.9.4"
+}

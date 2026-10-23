@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+profile="${1:-quick}"
+case "$profile" in
+  quick|model|halmos|certora-compile|certora|kontrol|target-test|full) ;;
+  *)
+    echo "usage: $0 [quick|model|halmos|certora-compile|certora|kontrol|target-test|full]" >&2
+    exit 64
+    ;;
+esac
+
+if ! ./scripts/doctor; then
+  exit 1
+fi
+
+run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD 2>/dev/null || echo uncommitted)"
+run_dir="$ROOT/results/$run_id"
+mkdir -p "$run_dir"
+manifest="$run_dir/manifest.txt"
+
+failures=0
+skips=0
+
+{
+  echo "profile=$profile"
+  echo "started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "harness_commit=$(git rev-parse HEAD 2>/dev/null || echo uncommitted)"
+  echo "target_commit=$(git -C vendor/mynawallet-sc rev-parse HEAD)"
+  echo "target_describe=$(git -C vendor/mynawallet-sc describe --always --dirty)"
+  echo "node=$(node --version)"
+  echo "npm=$(npm --version)"
+  echo "python=$(python3 --version 2>&1)"
+  echo "uv=$(uv --version)"
+  echo "forge=$(forge --version | head -1)"
+  echo "solc=$(.tooling/bin/solc-0.8.26 --version | tail -1)"
+  echo "quint=$(node_modules/.bin/quint --version 2>/dev/null | head -1)"
+  echo "halmos=$(.venv/bin/halmos --version 2>/dev/null | head -1)"
+  echo "certora_cli=8.20.2"
+  if command -v kontrol >/dev/null 2>&1; then echo "kontrol=$(kontrol --version 2>/dev/null | head -1)"; else echo "kontrol=MISSING"; fi
+  echo
+} > "$manifest"
+
+run_stage() {
+  local name="$1"
+  shift
+  local log="$run_dir/$name.log"
+
+  printf 'RUN  %-24s' "$name"
+  printf ' %q' "$@"
+  printf '\n'
+
+  {
+    printf 'command:'
+    printf ' %q' "$@"
+    printf '\n\n'
+  } > "$log"
+
+  "$@" >> "$log" 2>&1
+  local code=$?
+  if (( code == 0 )); then
+    echo "PASS $name" | tee -a "$manifest"
+  else
+    echo "FAIL $name exit=$code log=${log#$ROOT/}" | tee -a "$manifest"
+    failures=$((failures + 1))
+  fi
+}
+
+skip_stage() {
+  local name="$1"
+  shift
+  echo "SKIP $name reason=$*" | tee -a "$manifest"
+  skips=$((skips + 1))
+}
+
+run_model() {
+  run_stage model-typecheck npm run model:typecheck
+  run_stage model-tests npm run model:test
+  run_stage model-tlc npm run model:verify
+}
+
+run_solidity_build() {
+  run_stage solidity-harness-build bash -lc 'cd verification/solidity && forge build'
+}
+
+run_halmos() {
+  if [[ -x .venv/bin/halmos ]]; then
+    run_solidity_build
+    run_stage halmos-hash-canonical bash -lc 'cd verification/solidity && ../../.venv/bin/halmos --function check_hashMatchesCanonicalEncoding'
+  else
+    skip_stage halmos "pinned Halmos is not installed"
+  fi
+}
+
+run_certora_compile() {
+  if [[ -x .venv/bin/certoraRun ]]; then
+    run_stage certora-compile ./scripts/certora-run verification/certora/confs/PasskeyRecoveryExecutor.conf --compilation_steps_only
+  else
+    skip_stage certora-compile "pinned certora-cli is not installed"
+  fi
+}
+
+run_certora() {
+  if [[ ! -x .venv/bin/certoraRun ]]; then
+    skip_stage certora "pinned certora-cli is not installed"
+  elif [[ -z "${CERTORAKEY:-}" ]]; then
+    skip_stage certora "CERTORAKEY is unset"
+  else
+    run_stage certora ./scripts/certora-run verification/certora/confs/PasskeyRecoveryExecutor.conf
+  fi
+}
+
+run_kontrol() {
+  if command -v kontrol >/dev/null 2>&1; then
+    run_stage kontrol-build bash -lc 'cd verification/solidity && kontrol build'
+    run_stage kontrol-hash-canonical bash -lc 'cd verification/solidity && kontrol prove --match-test RecoveryHashProperties.test_hashMatchesCanonicalEncoding'
+  else
+    skip_stage kontrol "Kontrol v1.0.255 is not installed"
+  fi
+}
+
+run_target_test() {
+  run_stage target-cross-chain-e2e bash -lc 'cd vendor/mynawallet-sc && forge test --match-path test/integration/recovery/CrossChainRecoveryE2EFlow.t.sol -vv'
+}
+
+case "$profile" in
+  quick)
+    run_stage model-typecheck npm run model:typecheck
+    run_stage model-tests npm run model:test
+    run_solidity_build
+    ;;
+  model) run_model ;;
+  halmos) run_halmos ;;
+  certora-compile) run_certora_compile ;;
+  certora) run_certora ;;
+  kontrol) run_kontrol ;;
+  target-test) run_target_test ;;
+  full)
+    run_model
+    run_halmos
+    run_certora_compile
+    run_certora
+    run_kontrol
+    run_target_test
+    ;;
+esac
+
+{
+  echo
+  echo "finished_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "failures=$failures"
+  echo "skips=$skips"
+} >> "$manifest"
+
+echo "evidence: ${run_dir#$ROOT/}"
+if (( failures > 0 )); then
+  exit 1
+fi

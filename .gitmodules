@@ -1,0 +1,4 @@
+[submodule "vendor/mynawallet-sc"]
+	path = vendor/mynawallet-sc
+	url = https://github.com/a42x/MynaWallet-SC.git
+	branch = feat/cross-chain-recovery

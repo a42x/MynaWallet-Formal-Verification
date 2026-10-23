@@ -1,0 +1,38 @@
+schemaVersion: 1
+target: cross-chain-recovery
+properties:
+  - id: CCR-MODEL-001
+    statement: A recovery request executes at most once per chain.
+    layer: protocol
+    tool: quint-tlc
+    status: implemented
+  - id: CCR-MODEL-002
+    statement: A consumed request corresponds to exactly one successful execution.
+    layer: protocol
+    tool: quint-tlc
+    status: implemented
+  - id: CCR-MODEL-003
+    statement: If both chains execute the same request, both install the same requested key.
+    layer: protocol
+    tool: quint-tlc
+    status: implemented
+  - id: CCR-MODEL-004
+    statement: Paused or stale-config chains cannot execute the request.
+    layer: protocol
+    tool: quint-tlc
+    status: implemented
+  - id: CCR-HALMOS-001
+    statement: The guardian approval digest exactly matches the chain-id-less canonical encoding for all inputs.
+    layer: implementation
+    tool: halmos
+    status: implemented
+  - id: CCR-CERTORA-001
+    statement: consumedRecoveryRequests is monotonic for every non-reverting public method.
+    layer: implementation
+    tool: certora
+    status: implemented
+  - id: CCR-KONTROL-001
+    statement: The compiled guardian approval hash matches the canonical encoding.
+    layer: evm
+    tool: kontrol
+    status: implemented

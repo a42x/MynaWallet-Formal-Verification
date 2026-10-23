@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+echo "==> Initializing pinned source and nested submodules"
+git submodule update --init --recursive
+
+echo "==> Installing pinned target JavaScript dependencies"
+(
+  cd vendor/mynawallet-sc
+  COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@8.15.0 install --frozen-lockfile --ignore-scripts
+)
+
+echo "==> Installing pinned Quint"
+if [[ -f package-lock.json ]]; then
+  npm ci
+else
+  npm install --package-lock-only
+  npm ci
+fi
+
+echo "==> Locking and installing pinned Python verification tools"
+if [[ ! -f uv.lock ]]; then
+  uv lock
+fi
+uv sync --frozen
+
+echo "==> Building target once to materialize solc 0.8.26"
+(
+  cd vendor/mynawallet-sc
+  forge build --skip test
+)
+
+mkdir -p .tooling/bin
+SOLC_SOURCE="${SOLC_0_8_26:-$HOME/.svm/0.8.26/solc-0.8.26}"
+if [[ ! -x "$SOLC_SOURCE" ]]; then
+  echo "error: solc 0.8.26 was not found at $SOLC_SOURCE" >&2
+  echo "set SOLC_0_8_26 to the exact compiler binary" >&2
+  exit 1
+fi
+ln -sfn "$SOLC_SOURCE" .tooling/bin/solc-0.8.26
+ln -sfn "$SOLC_SOURCE" .tooling/bin/solc8.26
+
+echo "==> Building shared Solidity verification harness"
+(
+  cd verification/solidity
+  forge build
+)
+
+echo "bootstrap: READY"
+echo "Next: ./scripts/doctor && ./scripts/verify quick"

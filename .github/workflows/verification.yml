@@ -1,0 +1,62 @@
+name: verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproducible-verification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.3"
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Bootstrap pinned tools and source dependencies
+        run: ./scripts/bootstrap
+
+      - name: Check environment
+        run: ./scripts/doctor
+
+      - name: Exhaustive finite-state protocol model
+        run: ./scripts/verify model
+
+      - name: Solidity symbolic property
+        run: ./scripts/verify halmos
+
+      - name: Certora local compilation and CVL syntax
+        run: ./scripts/verify certora-compile
+
+      - name: Pinned target cross-chain E2E suite
+        run: ./scripts/verify target-test
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence
+          path: results/
+          if-no-files-found: error

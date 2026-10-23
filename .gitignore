@@ -1,0 +1,27 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Tool environments
+.venv/
+.tooling/
+node_modules/
+_apalache-out/
+
+# Verification outputs
+results/**
+!results/.gitkeep
+.certora_internal/
+.certora_sources/
+verification/solidity/cache/
+verification/solidity/out/
+verification/solidity/broadcast/
+verification/solidity/.kontrol/
+
+# Nested target outputs
+vendor/mynawallet-sc/cache/
+vendor/mynawallet-sc/out/
+vendor/mynawallet-sc/broadcast/
+vendor/mynawallet-sc/coverage/
+vendor/mynawallet-sc/lcov.info
