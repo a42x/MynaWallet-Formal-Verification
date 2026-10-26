@@ -26,6 +26,39 @@ Quint models each chain as an independent recovery state machine. It explicitly 
 
 Safety properties are checked independently from liveness assumptions.
 
+### Off-chain level (API / relayer / guardian)
+
+The same Quint model (`CrossChainRecovery.qnt`) extends the on-chain core with
+the off-chain state machine realized by `a42x/api` (recovery feature) and
+`a42x/api-infrastructure` (recovery-relayer / guardian2 KMS). It models:
+
+- signed dispatch by the fan-out service, bounded to `MaxDispatches=2` attempts
+  per chain, with retry only after an observed lost attempt and never after
+  delivery (`CCR-API-001`),
+- the guardian-approval signing deadline; no dispatch past it, bookkeeping
+  frozen at passage (`CCR-API-002`),
+- the API request status machine `pending_passkey -> completed/failed/
+  expired/cancelled` and terminal stability (`CCR-API-003`),
+- the per-identity cooldown gating a second sequential request (`CCR-API-004`),
+- completion-notification idempotency between the eager path and the worker
+  racing on the atomic DB claim (`CCR-API-005`),
+- partial fan-out safety: execution only on dispatched, delivered chains, and
+  requested-key convergence (`CCR-REL-001`),
+- Guardian-2 signature availability before any dispatch (`CCR-REL-002`).
+
+Abstraction assumptions:
+
+- Guardian 1 signs in-process with KMS (`RECOVERY_RELAYER_KMS_KEY_PATH`);
+  Guardian 2 is fetched over HTTP from the `nft-cosigner-template` Cloud Run
+  service. Both are boolean availability conditions.
+- The on-chain deadline in the guardian-approval TYPEHASH is enforced by the
+  contract; the model reflects it as the `not deadlinePassed` submit guard and
+  cross-checks it at the implementation layer.
+- Relayer submission and chain inclusion are abstracted as
+  dispatch -> (deliver | lose) -> submit.
+- Bounded claim: 2 chains, at most 2 sequential requests per identity,
+  clock in 0..3, at most 2 dispatches per chain.
+
 ### Implementation level
 
 Kontrol targets the pinned Solidity implementation.
@@ -55,4 +88,6 @@ The protocol intentionally omits chain ID and verifying-contract domain separati
 - liveness requires a relayer to submit on every intended chain,
 - safety on a stale chain requires operational guardian-state reconciliation.
 
-No contract-level tool can prove these operational assumptions by itself.
+The relayer part of the last two bullets is now internalized as bounded claims
+(`CCR-REL-001/002`, `CCR-API-002`) in the off-chain layer above. No contract-level
+tool can prove the remaining operational assumptions by itself.
