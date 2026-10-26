@@ -26,3 +26,65 @@ properties:
     layer: evm
     tool: kontrol
     status: implemented
+  - id: CCR-API-001
+    statement: >-
+      The fan-out dispatches a UserOp for a chain at most once until the
+      attempt is observed lost, and never again after delivery; bounded to
+      MaxDispatches=2 attempts per chain.
+    layer: api
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3, dispatches<=2
+  - id: CCR-API-002
+    statement: >-
+      No UserOp is signed or dispatched for a request whose guardian-approval
+      deadline has passed; the dispatch bookkeeping is frozen at deadline
+      passage.
+    layer: api
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3
+  - id: CCR-API-003
+    statement: >-
+      A recovery request that reaches a terminal status (completed, failed,
+      expired, cancelled) never leaves that status.
+    layer: api
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3
+  - id: CCR-API-004
+    statement: >-
+      A second recovery request for the same identity is created only after
+      the previous request reached a terminal status and a cooldown window
+      elapsed; at most 2 sequential requests per identity.
+    layer: api
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3
+  - id: CCR-API-005
+    statement: >-
+      The completion notification fires at most once, whichever racing path
+      (eager completion check or worker last-chain flip) wins the atomic
+      claim.
+    layer: api
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3
+  - id: CCR-REL-001
+    statement: >-
+      Under partial fan-out (any non-empty subset of chains dispatched, with
+      bounded retries), execution is impossible without a prior dispatch,
+      only delivered payloads execute, and every executed chain installs
+      the same requested key.
+    layer: relay
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3
+  - id: CCR-REL-002
+    statement: >-
+      A UserOp dispatch occurs only after the Guardian-2 HTTP signature is
+      available; no dispatch is made on Guardian-1 signatures alone.
+    layer: relay
+    tool: quint-tlc
+    status: implemented
+    bounds: chains=2, requests<=2, ticks<=3

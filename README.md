@@ -15,6 +15,7 @@
 | レイヤー | ツール | 目的 |
 |---|---|---|
 | Protocol model | Quint + TLC/Apalache | 複数chain、fan-out、遅延、重複、状態不一致 |
+| Off-chain model | Quint + TLC | API/relayer/guardian 同期:重複送信禁止、署名 deadline、quorum、terminal 状態不変、cooldown、通知冪等性 |
 | Implementation tests | Foundry | Solidityテスト形式での反例探索・E2E |
 | EVM semantics | Kontrol/KEVM | EntryPoint、EIP-7702、proxy、delegatecall、rollback |
 
@@ -85,6 +86,16 @@ Apple Siliconでは公式amd64イメージをDockerのエミュレーション�
 - compiler/tool versions
 - Kontrolの探索bound
 - Quintモデルが実装・運用を正しく抽象化していること
-- cross-chain relayer、chain finality、guardian同期について明示したassumption
+
+Off-chainレイヤー(`CCR-API-001..005`、`CCR-REL-001/002`)は `a42x/api` の recovery feature と
+`a42x/api-infrastructure` の recovery-relayer/guardian2 を対象に、次の抽象を置いて検証している:
+
+- Guardian 1 は API プロセス内 KMS 署名、Guardian 2 は nft-cosigner-template Cloud Run サービスからの
+  HTTP フェッチ。双方を boolean availability に抽象化する。
+- オンチェーンの guardian-approval deadline(TYPEHASH)は submit ガード `not deadlinePassed` としてモデル化し、
+  実装層(Kontrol / Foundry)で裏付けを取る。
+- dispatch -> (deliver | lose) -> submit でリレー送信と chain 取り込みを抽象化する。
+
+cross-chain relayer、chain finality については明示したassumptionを引き続き置く。
 
 詳細は [docs/methodology.md](docs/methodology.md) を参照してください。
