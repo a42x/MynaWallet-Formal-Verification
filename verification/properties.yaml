@@ -88,3 +88,74 @@ properties:
     tool: quint-tlc
     status: implemented
     bounds: chains=2, requests<=2, ticks<=3
+  - id: PAY-KONTROL-001
+    statement: >-
+      The compiled PaymasterDecision digest matches the canonical EIP-712
+      typed-hash encoding for every field value.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: symbolic (userOpHash, validUntil, validAfter, nonce, kid, payerId, policyId); no signature path
+  - id: PAY-KONTROL-002
+    statement: >-
+      validatePaymasterUserOp rejects a decision whose validUntil is in (0,
+      now) with PAYMASTER_DECISION_EXPIRED, and a decision whose validAfter
+      is in (now, inf) with PAYMASTER_DECISION_NOT_YET_VALID.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: symbolic validUntil / validAfter respectively; all other fields concrete
+  - id: PAY-KONTROL-003
+    statement: >-
+      A decision whose validUntil exceeds the uint48 validationData range
+      reverts with PAYMASTER_TIME_WINDOW_OVERFLOW instead of silently
+      truncating.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: concrete validUntil = uint48.max + 1
+  - id: PAY-KONTROL-004
+    statement: >-
+      Once a decision validated successfully, no further validation for the
+      same (userOpHash, nonce) can succeed: the usage key is marked and any
+      repeat, in SPONSOR or USER mode, reverts with PAYMASTER_REPLAY_NONCE.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: concrete bounded run; one successful validation then two rejected repeats
+  - id: PAY-KONTROL-005
+    statement: >-
+      A decision whose kid has no registered signer reverts with
+      PAYMASTER_UNKNOWN_SIGNER before any signature evaluation.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: concrete unregistered kid
+  - id: PAY-KONTROL-006
+    statement: >-
+      paymasterAndData parsing gates: a version byte other than 0x01 reverts
+      with PAYMASTER_INVALID_VERSION, a mode byte above 1 reverts with
+      PAYMASTER_INVALID_MODE, and a data segment shorter than the 2-byte
+      header reverts with PAYMASTER_MALFORMED_DATA.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: symbolic version in [0,255] minus {1}, symbolic mode in [2,255]; malformed segment concrete
+  - id: PAY-KONTROL-007
+    statement: >-
+      SPONSOR and USER modes validate identically: both return context
+      abi.encode(payerId, policyId, userOpHash) and the same packed
+      validationData derived from the decision TTL for a fresh usage key.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: concrete bounded run, two distinct decisions
+  - id: PAY-KONTROL-008
+    statement: >-
+      postOp emits PostOpAudit with (mode, payerId, policyId, userOpHash,
+      actualGasCost) decoded exactly from the validation context, and the
+      mode labels are opSucceeded, opReverted, postOpReverted.
+    layer: evm
+    tool: kontrol
+    status: implemented
+    bounds: concrete bounded runs for opSucceeded and postOpReverted modes

@@ -94,6 +94,9 @@ run_kontrol() {
   if command -v kontrol >/dev/null 2>&1 || { command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; }; then
     run_stage kontrol-build ./scripts/kontrol-run build -O0
     run_stage kontrol-hash-canonical ./scripts/kontrol-run prove --match-test RecoveryHashProperties.test_hashMatchesCanonicalEncoding
+    run_stage kontrol-paymaster-digest ./scripts/kontrol-run prove --match-test 'PaymasterProperties.test_decisionDigestMatchesCanonicalEncoding'
+    run_stage kontrol-paymaster-gates ./scripts/kontrol-run prove --match-test 'PaymasterProperties.test_(expiredDecisionReverts|notYetValidDecisionReverts|windowOverflowReverts|unsupportedVersionReverts|unsupportedModeReverts|malformedPaymasterDataReverts|unknownSignerKidReverts)'
+    run_stage kontrol-paymaster-replay-audit ./scripts/kontrol-run prove --match-test 'PaymasterProperties.test_(usedDecisionCannotValidateAgain|sponsorModeDecisionValidates|userModeDecisionValidates|postOpEmitsAuditEvent|postOpModeStringMatchesAuditLabel)'
   else
     skip_stage kontrol "neither Kontrol v1.0.255 nor a running Docker daemon is available"
   fi

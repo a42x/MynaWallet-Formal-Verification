@@ -1,0 +1,1 @@
+../../../vendor/mynawallet-sc/src/MynaWallet.sol
