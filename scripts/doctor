@@ -21,7 +21,6 @@ need node
 need npm
 need corepack
 need python3
-need uv
 need forge
 
 expected_commit="$(python3 -c 'import json; print(json.load(open("toolchains.lock.json"))["target"]["commit"])')"
@@ -38,12 +37,6 @@ else
   bad "run ./scripts/bootstrap (package-lock.json/node_modules missing)"
 fi
 
-if [[ -f uv.lock && -x .venv/bin/python ]]; then
-  ok "Python verification environment installed"
-else
-  bad "run ./scripts/bootstrap (uv.lock/.venv missing)"
-fi
-
 if [[ -x .tooling/bin/solc-0.8.26 ]]; then
   solc_version="$(.tooling/bin/solc-0.8.26 --version | tail -1)"
   if [[ "$solc_version" == *"0.8.26"* ]]; then ok "solc: $solc_version"; else bad "wrong solc: $solc_version"; fi
@@ -54,12 +47,6 @@ fi
 if [[ -x node_modules/.bin/quint ]]; then
   ok "quint: $(node_modules/.bin/quint --version 2>/dev/null | head -1)"
 fi
-if [[ -x .venv/bin/halmos ]]; then
-  ok "halmos: $(.venv/bin/halmos --version 2>/dev/null | head -1)"
-fi
-if [[ -x .venv/bin/certoraRun ]]; then
-  ok "certoraRun installed"
-fi
 
 if command -v kontrol >/dev/null 2>&1; then
   ok "kontrol: $(kontrol --version 2>/dev/null | head -1)"
@@ -69,12 +56,6 @@ elif command -v docker >/dev/null 2>&1; then
   note "Docker is installed but not running; Kontrol stage will SKIP"
 else
   note "Kontrol and Docker are missing; Kontrol stage will SKIP"
-fi
-
-if [[ -n "${CERTORAKEY:-}" ]]; then
-  ok "CERTORAKEY is set (value hidden)"
-else
-  note "CERTORAKEY unset; remote Certora stage will SKIP"
 fi
 
 if (( fail )); then

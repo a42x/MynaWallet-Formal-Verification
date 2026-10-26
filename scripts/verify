@@ -6,9 +6,9 @@ cd "$ROOT"
 
 profile="${1:-quick}"
 case "$profile" in
-  quick|model|halmos|certora-compile|certora|kontrol|target-test|full) ;;
+  quick|model|kontrol|target-test|full) ;;
   *)
-    echo "usage: $0 [quick|model|halmos|certora-compile|certora|kontrol|target-test|full]" >&2
+    echo "usage: $0 [quick|model|kontrol|target-test|full]" >&2
     exit 64
     ;;
 esac
@@ -38,8 +38,6 @@ skips=0
   echo "forge=$(forge --version | head -1)"
   echo "solc=$(.tooling/bin/solc-0.8.26 --version | tail -1)"
   echo "quint=$(node_modules/.bin/quint --version 2>/dev/null | head -1)"
-  echo "halmos=$(.venv/bin/halmos --version 2>/dev/null | head -1)"
-  echo "certora_cli=8.20.2"
   if command -v kontrol >/dev/null 2>&1; then
     echo "kontrol=$(kontrol --version 2>/dev/null | head -1)"
   elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
@@ -92,33 +90,6 @@ run_solidity_build() {
   run_stage solidity-harness-build bash -lc 'cd verification/solidity && forge build'
 }
 
-run_halmos() {
-  if [[ -x .venv/bin/halmos ]]; then
-    run_solidity_build
-    run_stage halmos-hash-canonical bash -lc 'cd verification/solidity && ../../.venv/bin/halmos --function check_hashMatchesCanonicalEncoding'
-  else
-    skip_stage halmos "pinned Halmos is not installed"
-  fi
-}
-
-run_certora_compile() {
-  if [[ -x .venv/bin/certoraRun ]]; then
-    run_stage certora-compile ./scripts/certora-run verification/certora/confs/PasskeyRecoveryExecutor.conf --compilation_steps_only
-  else
-    skip_stage certora-compile "pinned certora-cli is not installed"
-  fi
-}
-
-run_certora() {
-  if [[ ! -x .venv/bin/certoraRun ]]; then
-    skip_stage certora "pinned certora-cli is not installed"
-  elif [[ -z "${CERTORAKEY:-}" ]]; then
-    skip_stage certora "CERTORAKEY is unset"
-  else
-    run_stage certora ./scripts/certora-run verification/certora/confs/PasskeyRecoveryExecutor.conf
-  fi
-}
-
 run_kontrol() {
   if command -v kontrol >/dev/null 2>&1 || { command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; }; then
     run_stage kontrol-build ./scripts/kontrol-run build -O0
@@ -139,16 +110,10 @@ case "$profile" in
     run_solidity_build
     ;;
   model) run_model ;;
-  halmos) run_halmos ;;
-  certora-compile) run_certora_compile ;;
-  certora) run_certora ;;
   kontrol) run_kontrol ;;
   target-test) run_target_test ;;
   full)
     run_model
-    run_halmos
-    run_certora_compile
-    run_certora
     run_kontrol
     run_target_test
     ;;

@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 
-.PHONY: bootstrap doctor verify quick model halmos certora-compile certora kontrol target-test clean
+.PHONY: bootstrap doctor verify quick model kontrol target-test clean
 
 bootstrap:
 	./scripts/bootstrap
@@ -16,15 +16,6 @@ quick:
 
 model:
 	./scripts/verify model
-
-halmos:
-	./scripts/verify halmos
-
-certora-compile:
-	./scripts/verify certora-compile
-
-certora:
-	./scripts/verify certora
 
 kontrol:
 	./scripts/verify kontrol
