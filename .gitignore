@@ -12,8 +12,6 @@ _apalache-out/
 # Verification outputs
 results/**
 !results/.gitkeep
-.certora_internal/
-.certora_sources/
 verification/solidity/cache/
 verification/solidity/out/
 verification/solidity/broadcast/

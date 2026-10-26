@@ -1,10 +1,17 @@
+---
+title: Reproducibility
+last_updated: 2026-10-26
+tags:
+  - formal-verification
+  - reproducibility
+---
+
 # Reproducibility
 
 ## Pinned inputs
 
 - Production source is a git submodule at an exact commit.
 - JavaScript dependencies are pinned by `package-lock.json`.
-- Python tools are pinned by `uv.lock`.
 - Non-package-manager tools are recorded in `toolchains.lock.json`.
 - Every run captures actual versions and the submodule commit.
 
@@ -12,7 +19,7 @@
 
 - **PASS**: the tool completed and established the stated property within the recorded model and bounds.
 - **FAIL**: a counterexample, assertion violation, compilation failure, or non-zero tool exit.
-- **SKIP**: a declared prerequisite is absent, such as `CERTORAKEY` or Kontrol.
+- **SKIP**: a declared prerequisite is absent, such as Kontrol and Docker.
 - **UNKNOWN**: timeout, solver unknown, unsupported opcode/cheatcode, bound truncation, or incomplete proof.
 
 ## Updating the target

@@ -21,12 +21,6 @@ else
   npm ci
 fi
 
-echo "==> Locking and installing pinned Python verification tools"
-if [[ ! -f uv.lock ]]; then
-  uv lock
-fi
-uv sync --frozen
-
 echo "==> Building target once to materialize solc 0.8.26"
 (
   cd vendor/mynawallet-sc

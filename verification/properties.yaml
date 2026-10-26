@@ -21,16 +21,6 @@ properties:
     layer: protocol
     tool: quint-tlc
     status: implemented
-  - id: CCR-HALMOS-001
-    statement: The guardian approval digest exactly matches the chain-id-less canonical encoding for all inputs.
-    layer: implementation
-    tool: halmos
-    status: implemented
-  - id: CCR-CERTORA-001
-    statement: consumedRecoveryRequests is monotonic for every non-reverting public method.
-    layer: implementation
-    tool: certora
-    status: implemented
   - id: CCR-KONTROL-001
     statement: The compiled guardian approval hash matches the canonical encoding.
     layer: evm

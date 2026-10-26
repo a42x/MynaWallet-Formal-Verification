@@ -15,8 +15,7 @@
 | レイヤー | ツール | 目的 |
 |---|---|---|
 | Protocol model | Quint + TLC/Apalache | 複数chain、fan-out、遅延、重複、状態不一致 |
-| Contract invariants | Certora | replay、threshold、atomicity、state cleanup |
-| Symbolic tests | Halmos | Solidityテスト形式での反例探索 |
+| Implementation tests | Foundry | Solidityテスト形式での反例探索・E2E |
 | EVM semantics | Kontrol/KEVM | EntryPoint、EIP-7702、proxy、delegatecall、rollback |
 
 ## 再現可能な入口
@@ -31,9 +30,6 @@
 
 ```bash
 ./scripts/verify model
-./scripts/verify halmos
-./scripts/verify certora-compile
-./scripts/verify certora       # CERTORAKEY required
 ./scripts/verify kontrol
 ./scripts/verify target-test
 ./scripts/verify full
@@ -79,7 +75,7 @@ Apple Siliconでは公式amd64イメージをDockerのエミュレーション�
 - `.claude/commands/solidity-security.md`
 - `.cursor/skills/verify-mynawallet-sc/SKILL.md`
 
-最後のskillはbuild、Foundry test、deploy dry-run、fork/parity検査用であり、Certora・Kontrol・Halmos・Quintによる形式検証ではありません。
+最後のskillはbuild、Foundry test、deploy dry-run、fork/parity検査用であり、Kontrol・Quintによる形式検証ではありません。
 
 ## 信頼境界
 
@@ -87,8 +83,7 @@ Apple Siliconでは公式amd64イメージをDockerのエミュレーション�
 
 - pinned Solidity sourceと依存関係
 - compiler/tool versions
-- Certoraのexternal-call summaries
-- Halmos/Kontrolの探索bound
+- Kontrolの探索bound
 - Quintモデルが実装・運用を正しく抽象化していること
 - cross-chain relayer、chain finality、guardian同期について明示したassumption
 

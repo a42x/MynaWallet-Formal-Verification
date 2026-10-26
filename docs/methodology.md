@@ -1,3 +1,13 @@
+---
+title: Verification methodology
+last_updated: 2026-10-26
+tags:
+  - formal-verification
+  - quint
+  - kontrol
+  - foundry
+---
+
 # Verification methodology
 
 ## Two-level verification
@@ -18,11 +28,11 @@ Safety properties are checked independently from liveness assumptions.
 
 ### Implementation level
 
-Certora, Halmos, and Kontrol target the pinned Solidity implementation.
+Kontrol targets the pinned Solidity implementation.
 
-- Certora proves inductive contract invariants under declared external-call summaries.
-- Halmos searches symbolic execution paths under explicit loop and dynamic-data bounds.
 - Kontrol proves reachability claims against KEVM or performs bounded model checking.
+
+The implementation-level monotonicity of `consumedRecoveryRequests` (former `CCR-CERTORA-001`) is **not claimed** by this repository; the Certora and Halmos toolchains were removed on 2026-10-26. The canonical-guardian-digest property is proved by Kontrol (`CCR-KONTROL-001`).
 
 ## Initial safety properties
 

@@ -1,6 +1,6 @@
 ---
 description: Run the reproducible MynaWallet formal-verification pipeline
-argument-hint: "[quick|model|halmos|certora-compile|certora|kontrol|target-test|full]"
+argument-hint: "[quick|model|kontrol|target-test|full]"
 allowed-tools: Bash(./scripts/doctor:*), Bash(./scripts/verify:*), Read
 ---
 

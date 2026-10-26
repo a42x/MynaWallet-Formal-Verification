@@ -8,9 +8,6 @@ Claude Code command:
 
 - `/verification quick`
 - `/verification model`
-- `/verification halmos`
-- `/verification certora-compile`
-- `/verification certora`
 - `/verification kontrol`
 - `/verification full`
 
