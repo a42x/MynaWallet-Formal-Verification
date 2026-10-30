@@ -31,6 +31,13 @@ else
   bad "target commit mismatch: expected $expected_commit, got ${actual_commit:-missing}"
 fi
 
+auth_commit="$(python3 -c 'import json; print(json.load(open("verification/auth-source.lock.json"))["commit"])' 2>/dev/null || true)"
+if [[ "$auth_commit" =~ ^[0-9a-f]{40}$ ]]; then
+  ok "auth API source commit: $auth_commit"
+else
+  bad "verification/auth-source.lock.json is missing or invalid"
+fi
+
 if [[ -f package-lock.json && -d node_modules ]]; then
   ok "Quint dependencies installed"
 else

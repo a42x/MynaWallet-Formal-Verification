@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/a42x/api.git",
+  "branch": "develop",
+  "commit": "8277832d744c8ce8e2b191fb06f13bff970babfb",
+  "capturedAt": "2026-10-30",
+  "scope": [
+    "api/src/features/auth",
+    "api/src/features/registration/services/ekyc-session-token.service.ts"
+  ]
+}
