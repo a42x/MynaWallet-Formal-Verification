@@ -1,5 +1,11 @@
 schemaVersion: 1
 target: cross-chain-recovery
+additionalSources:
+  - id: auth-api
+    repository: https://github.com/a42x/api.git
+    branch: develop
+    commit: 8277832d744c8ce8e2b191fb06f13bff970babfb
+    lock: verification/auth-source.lock.json
 properties:
   - id: CCR-MODEL-001
     statement: A recovery request executes at most once per chain.
@@ -88,3 +94,110 @@ properties:
     tool: quint-tlc
     status: implemented
     bounds: chains=2, requests<=2, ticks<=3
+  - id: AUTH-REG-001
+    statement: >-
+      A passkey registration commits only after its identity's signed eKYC
+      session token has been atomically consumed; a pre-commit rollback
+      restores only that caller-owned marker.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, registration-requests=2, challenge=1
+  - id: AUTH-REG-002
+    statement: >-
+      At most one passkey registration commits for each identity within the
+      bounded registration ceremony.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, registration-requests=2, challenge=1
+  - id: AUTH-LOGIN-001
+    statement: >-
+      An authentication challenge is consumed by at most one accepted verify
+      request, including invalid-credential and counter-anomaly outcomes.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, challenges<=2, verify-requests<=3
+  - id: AUTH-LOGIN-002
+    statement: >-
+      A login session is issued only for a registered passkey identity after
+      an accepted verification request consumed a generated challenge.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, challenges<=2, verify-requests<=3
+  - id: AUTH-LOGIN-003
+    statement: >-
+      Unknown credentials, invalid WebAuthn assertions and authenticator
+      counter anomalies expose the same anonymous login failure class.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: failure-classes=3
+  - id: AUTH-LOGIN-004
+    statement: >-
+      The login options and verify endpoints each accept at most two requests
+      from the modeled IP during their bounded rate-limit window.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: ip-addresses=1, per-endpoint-limit=2, observed-calls<=3
+  - id: AUTH-SESSION-001
+    statement: >-
+      Refresh-token rotation consumes an active token at most once and
+      preserves the authenticated identity on the replacement token pair.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, refresh-tokens=3, access-tokens=3
+  - id: AUTH-SESSION-002
+    statement: >-
+      Logout revokes only a refresh token owned by the authenticated caller;
+      a caller cannot revoke another identity's refresh token.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, refresh-tokens=3
+  - id: AUTH-SESSION-003
+    statement: >-
+      Account recovery or deletion revokes every active refresh token for the
+      affected identity, and no modeled old refresh token can mint a new pair.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, refresh-tokens=3, access-tokens=3
+  - id: AUTH-SESSION-004
+    statement: >-
+      Every active refresh or access token has exactly one modeled identity
+      owner, and refresh rotation never changes that owner.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, refresh-tokens=3, access-tokens=3
+  - id: AUTH-SESSION-005
+    statement: >-
+      A stateless access token is accepted only before its bounded expiry;
+      logout and recovery do not extend its lifetime.
+    layer: api-auth
+    tool: quint-tlc
+    status: implemented
+    bounds: identities=2, access-tokens=3, access-ttl=2, ticks<=4
+  - id: AUTH-REG-CE-001
+    statement: >-
+      One registration challenge should authorize at most one successful
+      registration even when two verify requests race after reading it.
+    layer: api-auth
+    tool: quint-tlc
+    status: counterexample
+    result: FAIL
+    bounds: identities=2, concurrent-registration-requests=2, challenge=1
+  - id: AUTH-SESSION-CE-001
+    statement: >-
+      Logout or recovery should immediately prevent further use of every
+      access token issued before termination.
+    layer: api-auth
+    tool: quint-tlc
+    status: counterexample
+    result: FAIL
+    bounds: identities=2, access-tokens=3, access-ttl=2, ticks<=4
