@@ -1,6 +1,6 @@
 ---
 title: Reproducibility
-last_updated: 2026-10-26
+last_updated: 2026-10-30
 tags:
   - formal-verification
   - reproducibility
@@ -10,7 +10,9 @@ tags:
 
 ## Pinned inputs
 
-- Production source is a git submodule at an exact commit.
+- Production Solidity source is a git submodule at an exact commit.
+- The read-only API authentication snapshot is pinned by
+  `verification/auth-source.lock.json`.
 - JavaScript dependencies are pinned by `package-lock.json`.
 - Non-package-manager tools are recorded in `toolchains.lock.json`.
 - Every run captures actual versions and the submodule commit.
@@ -21,6 +23,15 @@ tags:
 - **FAIL**: a counterexample, assertion violation, compilation failure, or non-zero tool exit.
 - **SKIP**: a declared prerequisite is absent, such as Kontrol and Docker.
 - **UNKNOWN**: timeout, solver unknown, unsupported opcode/cheatcode, bound truncation, or incomplete proof.
+
+`./scripts/verify auth-model` checks the passing authentication safety
+conjunctions. `./scripts/verify auth-findings` intentionally evaluates the two
+stronger desired properties and exits non-zero while their counterexamples
+remain reproducible. Its manifest records those properties as **FAIL**, not as
+successful tests.
+
+Every authentication TLC command is capped at 15 minutes, for a total model
+checking budget below one hour.
 
 ## Updating the target
 

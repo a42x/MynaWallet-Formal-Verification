@@ -5,10 +5,19 @@
   "description": "Reproducible formal verification harness for MynaWallet cross-chain recovery",
   "license": "GPL-3.0-only",
   "scripts": {
-    "model:typecheck": "quint typecheck models/quint/CrossChainRecovery.qnt",
-    "model:test": "quint test --main=CrossChainRecoveryTests models/quint/CrossChainRecovery.qnt",
-    "model:verify": "quint verify --backend=tlc --main=CrossChainRecovery --invariant=safety models/quint/CrossChainRecovery.qnt",
-    "model:simulate": "quint run --main=CrossChainRecovery --invariant=safety --max-samples=10000 models/quint/CrossChainRecovery.qnt"
+    "model:typecheck": "npm run model:recovery:typecheck && npm run model:auth:typecheck",
+    "model:test": "npm run model:recovery:test && npm run model:auth:test",
+    "model:verify": "npm run model:recovery:verify && npm run model:auth:verify",
+    "model:simulate": "quint run --main=CrossChainRecovery --invariant=safety --max-samples=10000 models/quint/CrossChainRecovery.qnt",
+    "model:recovery:typecheck": "quint typecheck models/quint/CrossChainRecovery.qnt",
+    "model:recovery:test": "quint test --main=CrossChainRecoveryTests models/quint/CrossChainRecovery.qnt",
+    "model:recovery:verify": "quint verify --backend=tlc --main=CrossChainRecovery --invariant=safety models/quint/CrossChainRecovery.qnt",
+    "model:auth:typecheck": "quint typecheck models/quint/AuthLifecycle.qnt",
+    "model:auth:test": "quint test --main=AuthLifecycleTests models/quint/AuthLifecycle.qnt",
+    "model:auth:verify": "npm run model:auth:verify:registration && npm run model:auth:verify:login && npm run model:auth:verify:session",
+    "model:auth:verify:registration": "quint verify --backend=tlc --main=AuthRegistration --invariant=safety models/quint/AuthLifecycle.qnt",
+    "model:auth:verify:login": "quint verify --backend=tlc --main=AuthLogin --invariant=safety models/quint/AuthLifecycle.qnt",
+    "model:auth:verify:session": "quint verify --backend=tlc --main=AuthSession --invariant=safety models/quint/AuthLifecycle.qnt"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.33.0"

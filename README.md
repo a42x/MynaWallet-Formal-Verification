@@ -9,6 +9,9 @@
 - Pinned commit: `357027d4b7e04ee6fd5cfca913bc1acfd1a30392`
 
 対象コードは `vendor/mynawallet-sc` git submoduleとして固定します。
+認証ライフサイクルモデルは `a42x/api` の
+`8277832d744c8ce8e2b191fb06f13bff970babfb` を読み取り専用の参照元とし、
+`verification/auth-source.lock.json` に固定します。
 
 ## 検証レイヤー
 
@@ -16,6 +19,7 @@
 |---|---|---|
 | Protocol model | Quint + TLC/Apalache | 複数chain、fan-out、遅延、重複、状態不一致 |
 | Off-chain model | Quint + TLC | API/relayer/guardian 同期:重複送信禁止、署名 deadline、quorum、terminal 状態不変、cooldown、通知冪等性 |
+| Auth lifecycle model | Quint + TLC | eKYC/passkey登録、ログインchallenge、列挙耐性、rate limit、refresh rotation、logout/recovery失効 |
 | Implementation tests | Foundry | Solidityテスト形式での反例探索・E2E |
 | EVM semantics | Kontrol/KEVM | EntryPoint、EIP-7702、proxy、delegatecall、rollback |
 
@@ -31,6 +35,8 @@
 
 ```bash
 ./scripts/verify model
+./scripts/verify auth-model
+./scripts/verify auth-findings  # 既知の2反例がある間は非0終了
 ./scripts/verify kontrol
 ./scripts/verify target-test
 ./scripts/verify full
@@ -97,5 +103,9 @@ Off-chainレイヤー(`CCR-API-001..005`、`CCR-REL-001/002`)は `a42x/api` の 
 - dispatch -> (deliver | lose) -> submit でリレー送信と chain 取り込みを抽象化する。
 
 cross-chain relayer、chain finality については明示したassumptionを引き続き置く。
+
+認証モデルは暗号を記号化し、2 identity、3 refresh token、3 access token、
+clock 4 tick の有限境界で検査する。登録challengeの非atomic消費と、logout/recovery後も
+access JWTが期限まで有効な点は `auth-findings` で **FAIL** として再現する。
 
 詳細は [docs/methodology.md](docs/methodology.md) を参照してください。
