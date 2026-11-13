@@ -1,6 +1,6 @@
 ---
 title: Verification methodology
-last_updated: 2026-10-30
+last_updated: 2026-11-13
 tags:
   - formal-verification
   - quint
@@ -109,6 +109,20 @@ The API is passkey/eKYC based, so password confirmation and password-reset
 flows are not present in this source snapshot. Recovery is represented by
 refresh-token revocation and is complemented by the existing cross-chain
 recovery model.
+
+### Gas sponsor lifecycle models
+
+Three independent Quint models cover the API-to-Pimlico boundary: sponsor pool
+reservations, user charge settlement, and submit-time user quota claims.
+The API snapshot is pinned separately in `verification/gas-sponsor-source.lock.json`.
+The models preserve transaction boundaries and expose the unlocked empty-read
+gap in retroactive charge settlement rather than assuming all transactions serialize.
+
+Run `./scripts/verify gas-model` for the safety conjunctions and
+`./scripts/verify gas-findings` for stronger desired properties. Counterexamples
+remain FAIL; they are not folded into a green claim of end-to-end safety.
+See [Gas sponsor model](gas-sponsor-model.md) for bounds, source correspondence,
+excluded behavior, and counterexample traces.
 
 ### Implementation level
 

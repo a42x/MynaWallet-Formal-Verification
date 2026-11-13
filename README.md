@@ -20,6 +20,7 @@
 | Protocol model | Quint + TLC/Apalache | 複数chain、fan-out、遅延、重複、状態不一致 |
 | Off-chain model | Quint + TLC | API/relayer/guardian 同期:重複送信禁止、署名 deadline、quorum、terminal 状態不変、cooldown、通知冪等性 |
 | Auth lifecycle model | Quint + TLC | eKYC/passkey登録、ログインchallenge、列挙耐性、rate limit、refresh rotation、logout/recovery失効 |
+| Gas sponsor model | Quint + TLC | API ↔ Pimlicoの予算予約・課金・利用上限・イベント競合 |
 | Implementation tests | Foundry | Solidityテスト形式での反例探索・E2E |
 | EVM semantics | Kontrol/KEVM | EntryPoint、EIP-7702、proxy、delegatecall、rollback |
 
@@ -37,6 +38,8 @@
 ./scripts/verify model
 ./scripts/verify auth-model
 ./scripts/verify auth-findings  # 既知の2反例がある間は非0終了
+./scripts/verify gas-model
+./scripts/verify gas-findings   # 強い安全性条件の反例をFAILとして記録し、非0終了
 ./scripts/verify kontrol
 ./scripts/verify target-test
 ./scripts/verify full
@@ -107,5 +110,10 @@ cross-chain relayer、chain finality については明示したassumptionを引
 認証モデルは暗号を記号化し、2 identity、3 refresh token、3 access token、
 clock 4 tick の有限境界で検査する。登録challengeの非atomic消費と、logout/recovery後も
 access JWTが期限まで有効な点は `auth-findings` で **FAIL** として再現する。
+
+ガススポンサーモデルはAPIの参照元を `verification/gas-sponsor-source.lock.json` に固定し、
+3つの独立した有限モデルで検査します。Pimlico内部や自作Paymasterコントラクトの
+正しさは主張しません。`gas-model` は通常の `model` / `full` とCIにも含まれます。
+範囲・実装との対応・反例は [docs/gas-sponsor-model.md](docs/gas-sponsor-model.md) を参照してください。
 
 詳細は [docs/methodology.md](docs/methodology.md) を参照してください。

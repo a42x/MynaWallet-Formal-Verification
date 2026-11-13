@@ -5,9 +5,9 @@
   "description": "Reproducible formal verification harness for MynaWallet cross-chain recovery",
   "license": "GPL-3.0-only",
   "scripts": {
-    "model:typecheck": "npm run model:recovery:typecheck && npm run model:auth:typecheck",
-    "model:test": "npm run model:recovery:test && npm run model:auth:test",
-    "model:verify": "npm run model:recovery:verify && npm run model:auth:verify",
+    "model:typecheck": "npm run model:recovery:typecheck && npm run model:auth:typecheck && npm run model:gas:typecheck",
+    "model:test": "npm run model:recovery:test && npm run model:auth:test && npm run model:gas:test",
+    "model:verify": "npm run model:recovery:verify && npm run model:auth:verify && npm run model:gas:verify",
     "model:simulate": "quint run --main=CrossChainRecovery --invariant=safety --max-samples=10000 models/quint/CrossChainRecovery.qnt",
     "model:recovery:typecheck": "quint typecheck models/quint/CrossChainRecovery.qnt",
     "model:recovery:test": "quint test --main=CrossChainRecoveryTests models/quint/CrossChainRecovery.qnt",
@@ -17,7 +17,13 @@
     "model:auth:verify": "npm run model:auth:verify:registration && npm run model:auth:verify:login && npm run model:auth:verify:session",
     "model:auth:verify:registration": "quint verify --backend=tlc --main=AuthRegistration --invariant=safety models/quint/AuthLifecycle.qnt",
     "model:auth:verify:login": "quint verify --backend=tlc --main=AuthLogin --invariant=safety models/quint/AuthLifecycle.qnt",
-    "model:auth:verify:session": "quint verify --backend=tlc --main=AuthSession --invariant=safety models/quint/AuthLifecycle.qnt"
+    "model:auth:verify:session": "quint verify --backend=tlc --main=AuthSession --invariant=safety models/quint/AuthLifecycle.qnt",
+    "model:gas:typecheck": "quint typecheck models/quint/GasSponsorTests.qnt",
+    "model:gas:test": "quint test --main=GasSponsorTests models/quint/GasSponsorTests.qnt",
+    "model:gas:verify": "npm run model:gas:verify:pool && npm run model:gas:verify:charge && npm run model:gas:verify:quota",
+    "model:gas:verify:pool": "quint verify --backend=tlc --main=GasSponsorPool --invariant=safety models/quint/GasSponsorPool.qnt",
+    "model:gas:verify:charge": "quint verify --backend=tlc --main=GasSponsorCharge --invariant=safety models/quint/GasSponsorCharge.qnt",
+    "model:gas:verify:quota": "quint verify --backend=tlc --main=GasSponsorQuota --invariant=safety models/quint/GasSponsorQuota.qnt"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.33.0"

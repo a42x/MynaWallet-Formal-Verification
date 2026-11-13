@@ -6,9 +6,9 @@ cd "$ROOT"
 
 profile="${1:-quick}"
 case "$profile" in
-  quick|model|auth-model|auth-findings|kontrol|target-test|full) ;;
+  quick|model|auth-model|auth-findings|gas-model|gas-findings|kontrol|target-test|full) ;;
   *)
-    echo "usage: $0 [quick|model|auth-model|auth-findings|kontrol|target-test|full]" >&2
+    echo "usage: $0 [quick|model|auth-model|auth-findings|gas-model|gas-findings|kontrol|target-test|full]" >&2
     exit 64
     ;;
 esac
@@ -38,6 +38,14 @@ auth_api_commit="$(python3 -c 'import json; print(json.load(open("verification/a
   echo "auth_api_repository=$auth_api_repository"
   echo "auth_api_branch=$auth_api_branch"
   echo "auth_api_commit=$auth_api_commit"
+  python3 - <<'PY'
+import json
+with open("verification/gas-sponsor-source.lock.json") as source:
+    lock = json.load(source)
+for key in ("repository", "branch", "commit"):
+    print(f"gas_api_{key}={lock[key]}")
+PY
+  sha256sum models/quint/GasSponsor*.qnt verification/gas-sponsor-source.lock.json
   echo "node=$(node --version)"
   echo "npm=$(npm --version)"
   echo "python=$(python3 --version 2>&1)"
@@ -128,11 +136,27 @@ run_auth_findings() {
   run_property_check auth-immediate-access-revoke timeout 15m node_modules/.bin/quint verify --backend=tlc --main=AuthSession --invariant=immediateAccessInvalidation models/quint/AuthLifecycle.qnt
 }
 
+run_gas_model() {
+  run_stage gas-model-typecheck npm run model:gas:typecheck
+  run_stage gas-model-tests npm run model:gas:test
+  local component
+  for component in pool charge quota; do
+    run_property_check "gas-$component-tlc" timeout 5m npm run "model:gas:verify:$component"
+  done
+}
+
+run_gas_findings() {
+  run_property_check gas-pool-replay-funds timeout 5m node_modules/.bin/quint verify --backend=tlc --main=GasSponsorPool --invariant=replayBackedByFunds models/quint/GasSponsorPool.qnt
+  run_property_check gas-pool-zero-receipt timeout 5m node_modules/.bin/quint verify --backend=tlc --main=GasSponsorPool --invariant=knownReceiptSettled models/quint/GasSponsorPool.qnt
+  run_property_check gas-charge-active-spend timeout 5m node_modules/.bin/quint verify --backend=tlc --main=GasSponsorCharge --invariant=oneActiveSpendPerJudgment models/quint/GasSponsorCharge.qnt
+}
+
 run_model() {
   run_stage recovery-model-typecheck npm run model:recovery:typecheck
   run_stage recovery-model-tests npm run model:recovery:test
   run_property_check recovery-model-tlc npm run model:recovery:verify
   run_auth_model
+  run_gas_model
 }
 
 run_solidity_build() {
@@ -161,6 +185,8 @@ case "$profile" in
   model) run_model ;;
   auth-model) run_auth_model ;;
   auth-findings) run_auth_findings ;;
+  gas-model) run_gas_model ;;
+  gas-findings) run_gas_findings ;;
   kontrol) run_kontrol ;;
   target-test) run_target_test ;;
   full)

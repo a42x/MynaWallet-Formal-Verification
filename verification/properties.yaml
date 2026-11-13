@@ -6,6 +6,11 @@ additionalSources:
     branch: develop
     commit: 8277832d744c8ce8e2b191fb06f13bff970babfb
     lock: verification/auth-source.lock.json
+  - id: gas-sponsor-api
+    repository: https://github.com/a42x/api.git
+    branch: develop
+    commit: dd2b982100960b9dfce9e6f0c02e42a8e450e211
+    lock: verification/gas-sponsor-source.lock.json
 properties:
   - id: CCR-MODEL-001
     statement: A recovery request executes at most once per chain.
@@ -201,3 +206,166 @@ properties:
     status: counterexample
     result: FAIL
     bounds: identities=2, access-tokens=3, access-ttl=2, ticks<=4
+  - id: GAS-POOL-001
+    statement: >-
+      Sponsor pool reservation and settlement never reduce the modeled pool balance below zero.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: poolNonnegative
+    status: implemented
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-POOL-002
+    statement: >-
+      Available pool funds plus the net amount deducted for both judgments equal the initial funds, including release and reconciliation outcomes.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: poolConservation
+    status: implemented
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-POOL-003
+    statement: >-
+      Finalize, receipt backfill and the reservation sweeper share an at-most-once pool settlement claim per judgment.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: settlementAtMostOnce
+    status: implemented
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-POOL-004
+    statement: >-
+      An unsettled hold equals its deducted amount; a nonzero settled deduction without a reconciliation flag equals its known receipt cost.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: receiptAccounting
+    status: implemented
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-CHARGE-001
+    statement: >-
+      Gas reservations, refunds and receipt settlement never create a negative balance from the modeled nonnegative starting balance.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: chargeNonnegative
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
+  - id: GAS-CHARGE-002
+    statement: >-
+      The shared user balance plus pending estimates and confirmed user-paid amounts equal the initial funds.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: chargeConservation
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
+  - id: GAS-CHARGE-003
+    statement: >-
+      Each committed charge reservation is either pending, refunded once, or normally finalized once; prepare alone consumes no funds.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: reserveAccounting
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
+  - id: GAS-CHARGE-004
+    statement: >-
+      Each confirmed positive receipt cost equals its user-paid portion plus its explicitly operator-absorbed portion.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: confirmedCostSplit
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
+  - id: GAS-CHARGE-005
+    statement: >-
+      For one fixed receipt transaction hash per judgment, repeated normal and retroactive settlement confirm at most once.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: confirmationAtMostOnce
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
+  - id: GAS-QUOTA-001
+    statement: >-
+      Concurrent submits do not exceed the fixed daily limit in any shared or sponsor-scoped user counter.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorQuota
+    invariant: quotaBound
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, quota-buckets=3, daily-limit=1, intents=2, day=1
+  - id: GAS-QUOTA-002
+    statement: >-
+      A sponsor judgment claims a user slot at most once, including a submit retry after bundler failure.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorQuota
+    invariant: slotAtMostOnce
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, quota-buckets=3, daily-limit=1, intents=2, day=1
+  - id: GAS-QUOTA-003
+    statement: >-
+      Each claimed slot is charged only to its selected shared or sponsor-scoped counter; prepare consumes no slot.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorQuota
+    invariant: scopedAccounting
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, quota-buckets=3, daily-limit=1, intents=2, day=1
+  - id: GAS-QUOTA-004
+    statement: >-
+      A fresh slot claim uses the locked sponsor outcome and matching calldata intent, with a resolvable policy at claim time.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorQuota
+    invariant: authorizedClaim
+    status: implemented
+    bounds: judgments=2, chains=2, identity=1, quota-buckets=3, daily-limit=1, intents=2, day=1
+  - id: GAS-POOL-CE-001
+    statement: >-
+      A repeated positive sponsor decision made before any receipt is known should still be backed by an active pool hold.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: replayBackedByFunds
+    status: counterexample
+    result: FAIL
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-POOL-CE-002
+    statement: >-
+      A known receipt, including zero cost received before judgment commit, should leave no unsettled sponsor hold.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorPool
+    invariant: knownReceiptSettled
+    status: counterexample
+    result: FAIL
+    bounds: judgments=2, pool=1, initial-funds=3, hold=2, actual={0,1,2,4}, requests<=2/judgment
+  - id: GAS-CHARGE-CE-001
+    statement: >-
+      Retrying submit concurrently with retroactive debit of a cancelled reserve should leave at most one active spend row for the judgment.
+    layer: api-gas-sponsor
+    tool: quint-tlc
+    source: gas-sponsor-api
+    model: GasSponsorCharge
+    invariant: oneActiveSpendPerJudgment
+    status: counterexample
+    result: FAIL
+    bounds: judgments=2, chains=2, identity=1, shared-balance=3, estimate=2, actual={0,1,2,4}, reserves<=2/judgment
