@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/a42x/api.git",
+  "branch": "develop",
+  "commit": "dd2b982100960b9dfce9e6f0c02e42a8e450e211",
+  "capturedAt": "2026-11-13",
+  "scope": [
+    "api/src/features/gas-sponsor/routes/webhook.route.ts",
+    "api/src/features/gas-sponsor/services/judgment-orchestrator.ts",
+    "api/src/features/gas-sponsor/services/judgment.service.ts",
+    "api/src/features/gas-sponsor/services/pool-settlement.ts",
+    "api/src/features/gas-sponsor/services/finalize-orchestrator.ts",
+    "api/src/features/gas-sponsor/services/commit-charge-reserve.ts",
+    "api/src/features/gas-sponsor/services/commit-sponsor-slot.service.ts",
+    "api/src/features/gas-sponsor/repositories/pools.repository.ts",
+    "api/src/features/gas-sponsor/repositories/judgments.repository.ts",
+    "api/src/features/gas-sponsor/repositories/charge-ledger.repository.ts",
+    "api/src/features/gas-sponsor/repositories/abuse-counters.repository.ts",
+    "api/src/features/transactions/services/transaction-execution.service.ts",
+    "api/src/jobs/gas-sponsor-reservation-sweeper.job.ts",
+    "api/src/jobs/gas-sponsor-receipt-backfill.job.ts",
+    "api/src/db/schema/gas-sponsor.ts",
+    "api/src/services/drizzle.ts",
+    "api/src/lib/create-postgres-client.ts"
+  ]
+}

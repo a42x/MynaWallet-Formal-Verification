@@ -38,6 +38,13 @@ else
   bad "verification/auth-source.lock.json is missing or invalid"
 fi
 
+gas_commit="$(python3 -c 'import json; print(json.load(open("verification/gas-sponsor-source.lock.json"))["commit"])' 2>/dev/null || true)"
+if [[ "$gas_commit" =~ ^[0-9a-f]{40}$ ]]; then
+  ok "gas sponsor API source commit: $gas_commit"
+else
+  bad "verification/gas-sponsor-source.lock.json is missing or invalid"
+fi
+
 if [[ -f package-lock.json && -d node_modules ]]; then
   ok "Quint dependencies installed"
 else
