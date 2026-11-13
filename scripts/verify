@@ -43,7 +43,7 @@ import json
 with open("verification/gas-sponsor-source.lock.json") as source:
     lock = json.load(source)
 for key in ("repository", "branch", "commit"):
-    print(f"gas_api_{key}={lock[key]}")
+    print(f"gas_api_{key}={lock.get(key, 'MISSING')}")
 PY
   sha256sum models/quint/GasSponsor*.qnt verification/gas-sponsor-source.lock.json
   echo "node=$(node --version)"
