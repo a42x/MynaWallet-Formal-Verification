@@ -54,9 +54,12 @@ PostgreSQL implementation, Pimlico contract, or EVM execution.
 | `GasSponsorPool.qnt` | 2 judgments, 1 pool, initial funds 3, hold 2, at most 2 requested judgments per key | `GAS-POOL-001..004` |
 | `GasSponsorCharge.qnt` | 2 judgments interpreted as two chains sharing one identity's balance, initial funds 3, estimate 2, at most 2 reserves per judgment | `GAS-CHARGE-001..005` |
 | `GasSponsorQuota.qnt` | 2 judgments across two chains, 1 identity, 1 day, shared/sponsor-A/sponsor-B buckets, fixed limit 1, 2 calldata intents | `GAS-QUOTA-001..004` |
+| `GasSponsorIncome.qnt` | 1 identity on the chain-agnostic IAP pool, 2 on-chain deposit transactions (worker and webhook deliveries), 1 pending-deposit reservation, 1 spend judgment, 2 RevenueCat events (purchase + cancellation), at most 1 sponsorship refund | `GAS-INCOME-001..004` |
 
 Money is an integer abstraction; known receipt costs are `{0, 1, 2, 4}` and `-1`
-means unavailable. The bounds exercise refunds, exact cost, excess cost, and
+means unavailable. The income model additionally admits negative balances as a
+designed state (IAP cancellation debits net against the real balance with no
+floor), so the claimed safety excludes any nonnegativity claim by intent. The bounds exercise refunds, exact cost, excess cost, and
 insufficient headroom. They are not production amounts or limits. TLC explores
 the complete reachable graph of these finite domains, not merely a fixed trace
 length. `verification/properties.yaml` maps every claimed invariant to its model.
@@ -111,6 +114,27 @@ charge submits. Counter claims and slot stamps share a transaction. Pool
 settlement claims and pool balance changes also share a transaction. In contrast,
 charge receipt storage is separate from charge-ledger settlement; that gap is
 visible in the charge model.
+
+### Income model (charge balances)
+
+The conservation claim `balance == deposits + write-offs + sponsorship refunds
+− external refunds/IAP cancellations − user-paid` mirrors the ledger arithmetic
+of `creditUserDeposit` (floor at 0, write-off into
+`lifetime_operator_absorbed_jpy`), `recordDeposit` (insert-first idempotency on
+the partial `(tx_hash, kind)` unique index plus the reservation/CAS settle
+paths), `refundDepositByTxHash` (net, once per tx), `debitIapPool`/`creditIapPool`
+(gated by the `event_id` unique in `revenuecat-webhook.service.ts`), and
+`tryAtomicDebit` + `finalizeSpend` + `cancelSpend`. TLC checked it over all
+interleavings of two deposit deliveries per transaction, reservation settle/fail
+races, duplicate webhook deliveries, and one full spend lifecycle.
+
+Excluded from the model: per-chain legacy balance fallback rows,
+prepare-session balance-cap headroom rows (`gas_charge_prepare_sessions`
+'reserved' rows carry no balance movement), the deposit-confirmation worker's
+authoritative-amount reconciliation (it re-enters through `recordDeposit`),
+RevenueCat product-amount parsing, zero-amount deposits, and unbounded callers
+of `recordRefund` (modeled as at most one call; the production caller set is
+external to the ledger).
 
 ## Counterexamples
 

@@ -140,7 +140,7 @@ run_gas_model() {
   run_stage gas-model-typecheck npm run model:gas:typecheck
   run_stage gas-model-tests npm run model:gas:test
   local component
-  for component in pool charge quota; do
+  for component in pool charge quota income; do
     run_property_check "gas-$component-tlc" timeout 5m npm run "model:gas:verify:$component"
   done
 }
