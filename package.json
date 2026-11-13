@@ -18,12 +18,13 @@
     "model:auth:verify:registration": "quint verify --backend=tlc --main=AuthRegistration --invariant=safety models/quint/AuthLifecycle.qnt",
     "model:auth:verify:login": "quint verify --backend=tlc --main=AuthLogin --invariant=safety models/quint/AuthLifecycle.qnt",
     "model:auth:verify:session": "quint verify --backend=tlc --main=AuthSession --invariant=safety models/quint/AuthLifecycle.qnt",
-    "model:gas:typecheck": "quint typecheck models/quint/GasSponsorTests.qnt",
-    "model:gas:test": "quint test --main=GasSponsorTests models/quint/GasSponsorTests.qnt",
-    "model:gas:verify": "npm run model:gas:verify:pool && npm run model:gas:verify:charge && npm run model:gas:verify:quota",
+    "model:gas:typecheck": "quint typecheck models/quint/GasSponsorTests.qnt && quint typecheck models/quint/GasSponsorIncomeTests.qnt",
+    "model:gas:test": "quint test --main=GasSponsorTests models/quint/GasSponsorTests.qnt && quint test --main=GasSponsorIncomeTests models/quint/GasSponsorIncomeTests.qnt",
+    "model:gas:verify": "npm run model:gas:verify:pool && npm run model:gas:verify:charge && npm run model:gas:verify:quota && npm run model:gas:verify:income",
     "model:gas:verify:pool": "quint verify --backend=tlc --main=GasSponsorPool --invariant=safety models/quint/GasSponsorPool.qnt",
     "model:gas:verify:charge": "quint verify --backend=tlc --main=GasSponsorCharge --invariant=safety models/quint/GasSponsorCharge.qnt",
-    "model:gas:verify:quota": "quint verify --backend=tlc --main=GasSponsorQuota --invariant=safety models/quint/GasSponsorQuota.qnt"
+    "model:gas:verify:quota": "quint verify --backend=tlc --main=GasSponsorQuota --invariant=safety models/quint/GasSponsorQuota.qnt",
+    "model:gas:verify:income": "quint verify --backend=tlc --main=GasSponsorIncome --invariant=safety models/quint/GasSponsorIncome.qnt"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.33.0"
